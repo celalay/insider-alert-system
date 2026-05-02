@@ -3,6 +3,7 @@ import requests
 import xml.etree.ElementTree as ET
 from dotenv import load_dotenv
 from pathlib import Path
+from sector_lookup import get_sector
 
 env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
@@ -172,12 +173,14 @@ def parse_ownership_xml(xml_url):
         except:
             continue
 
+        sector = get_sector(ticker)
+
         result = {
             "company": issuer_name,
             "ticker": ticker,
             "insider": insider_name,
             "amount": amount,
-            "sector": "Unknown"  # placeholder for now
+            "sector": sector
         }
 
         results.append(result)
