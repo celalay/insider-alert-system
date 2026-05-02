@@ -98,3 +98,29 @@ Python-based insider trading alert system that monitors SEC Form 4 filings and s
 * Clear explanations
 * Progress validation after each step
 * Beginner-friendly, production-minded approach
+
+## How to Run
+
+### Setup
+
+1. Create virtual environment
+2. Install dependencies:
+   pip install -r requirements.txt
+
+### Environment Variables (.env)
+
+EMAIL_USER=[your_email@gmail.com](mailto:your_email@gmail.com)
+EMAIL_PASS=your_app_password
+SEC_USER_AGENT=[your_email@gmail.com](mailto:your_email@gmail.com)
+
+### Run the System
+
+python src/main.py
+
+---
+
+## Notes
+
+* `.env` is not tracked in Git (security)
+* System is currently run manually (no scheduler yet)
+* Uses live SEC data (results vary per run)
