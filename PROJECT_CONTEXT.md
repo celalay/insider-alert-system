@@ -2,20 +2,33 @@
 
 ## Overview
 
-This is a Python-based insider trading alert system.
+Python-based insider trading alert system that monitors SEC Form 4 filings and sends filtered alerts via email.
+
+---
 
 ## Current Capabilities
 
+### Data Pipeline
+
 * Fetches real SEC Form 4 filings using SEC Atom feed
-* Extracts filing links and parses ownership XML documents
-* Identifies insider transactions
-* Filters only open-market purchases (transaction code "P")
+* Extracts filing links and resolves ownership XML
+* Parses insider transaction data from XML
+
+### Filtering Logic
+
+* Detects open-market purchases (transaction code "P")
 * Calculates transaction value (shares × price)
 * Removes duplicate transactions
-* Applies filters:
 
-  * Minimum amount threshold ($25,000)
-  * Optional 13F confirmation
+### Filters Applied
+
+* Minimum transaction amount threshold (default: $25,000)
+* Sector lookup using ticker (via yfinance)
+* Halal filtering based on sector
+* Optional 13F confirmation (currently informational only, not blocking)
+
+### Alert System
+
 * Sends email alerts via Gmail SMTP
 * Uses `.env` for credentials:
 
@@ -23,27 +36,65 @@ This is a Python-based insider trading alert system.
   * EMAIL_PASS
   * SEC_USER_AGENT
 
+### Email Output Includes
+
+* Company name + ticker
+* Insider name
+* Transaction amount (formatted)
+* Sector
+* Halal status (Passed / filtered out)
+* 13F status:
+
+  * Confirmed
+  * Insider-only (no confirmation)
+
+---
+
 ## Project Structure
 
-* src/form4.py → SEC data + parsing
-* src/form13f.py → 13F logic (basic/mock)
-* src/halal.py → halal filtering (basic)
-* src/emailer.py → email sending
-* src/main.py → orchestration
+* `src/form4.py` → SEC feed + XML parsing + purchase detection
+* `src/form13f.py` → 13F logic (currently basic/mock)
+* `src/halal.py` → sector-based halal filtering
+* `src/sector_lookup.py` → ticker → sector via yfinance
+* `src/emailer.py` → email sending logic
+* `src/main.py` → main pipeline orchestration
 
-## Current Limitation
+---
 
-* Sector is set to "Unknown"
-* Halal filtering is not yet meaningful
+## Current System Behavior
 
-## Next Goal
+* Real-time SEC insider purchase detection is working
+* Sector lookup is integrated and functioning
+* Halal filtering is active and verifiable in email output
+* Duplicate transactions are handled
+* Alerts include insider-only signals even without 13F confirmation
 
-* Implement sector lookup using ticker symbols
-* Integrate sector into pipeline for halal filtering
+---
+
+## Known Limitations
+
+* 13F confirmation is not yet implemented with real data
+* Sector-based halal filtering is simplified (not finance-grade)
+* Multiple purchases from same insider are not yet aggregated
+* No scheduling (manual execution only)
+* No database/history tracking
+
+---
+
+## Next Goals (Priority Order)
+
+1. Aggregate purchases (group by insider + ticker)
+2. Improve 13F confirmation with real data
+3. Add scheduling (daily automation)
+4. Improve halal filtering accuracy (API or dataset-based)
+5. Improve email formatting (summary + ranking)
+6. Add logging / persistence
+
+---
 
 ## Development Style
 
 * Step-by-step implementation
 * Clear explanations
-* Progress checks after each step
-* Beginner-friendly but production-quality structure
+* Progress validation after each step
+* Beginner-friendly, production-minded approach
