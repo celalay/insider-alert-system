@@ -15,13 +15,16 @@ def main():
     for item in data:
         print(f"Checking item: {item}")
 
-        if item["amount"] < 25000:
+        if item["amount"] < 2000:
             print("Skipped: amount too low")
             continue
 
-        if not check_13f(item["ticker"]):
-            print("Skipped: no 13F confirmation")
-            continue
+        item["institutional_confirmation"] = check_13f(item["ticker"])
+
+        if item["institutional_confirmation"]:
+            print("13F confirmation found")
+        else:
+            print("No 13F confirmation — keeping as insider-only alert")
 
         if not is_halal(item["sector"]):
             print("Skipped: not halal")
@@ -41,7 +44,14 @@ def main():
     for a in alerts:
         body += f"{a['company']} ({a['ticker']})\n"
         body += f"Insider: {a['insider']}\n"
-        body += f"Amount: ${a['amount']}\n\n"
+        body += f"Amount: ${a['amount']:,.2f}\n"
+        body += f"Sector: {a['sector']}\n"
+        body += "Halal sector check: Passed\n"
+
+        if a.get("institutional_confirmation"):
+            body += "13F status: Confirmed\n\n"
+        else:
+            body += "13F status: Insider-only / not confirmed yet\n\n"
 
     print("Sending email...")
     send_email("Stock Alert", body)

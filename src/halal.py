@@ -1,10 +1,20 @@
 HARAM_SECTORS = [
-    "Banking",
+    "Financial Services",
+    "Banks",
+    "Insurance",
     "Gambling",
     "Alcohol",
     "Tobacco",
     "Adult Entertainment"
 ]
 
+
 def is_halal(sector):
-    return sector not in HARAM_SECTORS
+    if not sector:
+        return False
+
+    for haram in HARAM_SECTORS:
+        if haram.lower() in sector.lower():
+            return False
+
+    return True
