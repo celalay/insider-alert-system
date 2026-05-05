@@ -82,12 +82,47 @@ def get_form4_data():
         except Exception as e:       
             print("Error processing filing:", e)
 
-    print(f"\nFound {len(all_results)} purchase transactions.")
+    aggregated_results = aggregate_purchase_results(all_results)
 
-    for r in all_results:
+    print(f"\nFound {len(aggregated_results)} aggregated purchase alerts.")
+
+    for r in aggregated_results:
         print(r)
 
-    return all_results
+    return aggregated_results
+
+
+def aggregate_purchase_results(results):
+    aggregated = {}
+
+    for result in results:
+        key = (
+            result["company"],
+            result["ticker"],
+            result["sector"],
+        )
+
+        if key not in aggregated:
+            aggregated[key] = {
+                "company": result["company"],
+                "ticker": result["ticker"],
+                "insiders": [],
+                "amount": 0.0,
+                "sector": result["sector"],
+            }
+
+        if result["insider"] not in aggregated[key]["insiders"]:
+            aggregated[key]["insiders"].append(result["insider"])
+
+        aggregated[key]["amount"] += result["amount"]
+
+    aggregated_results = []
+
+    for item in aggregated.values():
+        item["insider"] = "; ".join(item["insiders"])
+        aggregated_results.append(item)
+
+    return aggregated_results
 
 def extract_xml_link(filing_url):
     headers = {
