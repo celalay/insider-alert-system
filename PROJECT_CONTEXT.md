@@ -22,11 +22,11 @@ Python-based insider trading alert system that monitors SEC Form 4 filings and s
 
 ### Filters Applied
 
-* Minimum transaction amount threshold (default: $25,000)
+* Minimum transaction amount threshold in pipeline (currently $2,000)
 * Sector lookup using ticker (via yfinance)
-* Halal filtering based on sector
+* Two-category halal filtering: definitive-haram match => `most_probably_no`, otherwise `needs_to_be_validate`
 * Size-aware 13F institutional signal using market cap plus `yfinance` holder data
-* Fund-level snapshot in alerts: holder name, shares, % of company, value, and proxy trend note
+* Fund-level 13F snapshot in alerts: holder name, shares, % of company, and value
 * Two-level 13F wording in email output: `needs_to_be_validate` / `most_probably_no`
 
 ### Alert System
@@ -81,7 +81,6 @@ Defaults
 ## Known Limitations
 
 * 13F logic currently uses `yfinance` market cap and institutional holder data as a proxy, not full SEC quarter-by-quarter filing comparison
-* Quarter-over-quarter change is still a placeholder in the current proxy output
 * Sector-based halal filtering is simplified (not finance-grade)
 * No scheduling (manual execution only)
 * No database/history tracking

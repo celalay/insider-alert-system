@@ -5,13 +5,12 @@ Python-based insider trading alert system that monitors SEC Form 4 filings, filt
 ## What It Does
 
 - Pulls live SEC Form 4 filings from the SEC Atom feed
- - Pulls live SEC Form 4 filings from the SEC Atom feed
 - Parses ownership XML and keeps open-market purchase transactions
 - Aggregates multiple purchases from the same insider into one total amount
 - Looks up the company sector through `yfinance`
-- Filters out non-halal sectors with a simple sector-name check
+- Applies a two-category halal screen: `most_probably_no` for definitive-haram signals, otherwise `needs_to_be_validate`
 - Applies a size-aware 13F institutional signal using market cap and `yfinance` holder data
-- Shows fund-level 13F details in the email: holder name, shares, percent of company, value, and a proxy trend note
+- Shows fund-level 13F snapshot details in the email: holder name, shares, percent of company, and value
 - Uses a two-level email structure: `Needs to be Validate` and `Most Probably NO`
 - Sends the final alerts by Gmail SMTP
 
@@ -87,7 +86,7 @@ When the app is healthy, a manual run will usually print messages like:
 When the tests are healthy, you should see something like:
 
 ```text
-Ran 11 tests in ...
+Ran 12 tests in ...
 
 OK
 ```
@@ -113,6 +112,5 @@ The `.env` file is meant to stay local and should not be committed.
 ## Notes
 
 - The app currently runs manually.
-- 13F logic is currently a market-cap-aware institutional proxy, not full SEC quarter-over-quarter filing comparison.
-- Quarter-over-quarter change is not yet calculated from SEC 13F filing history.
+- 13F logic is currently a market-cap-aware institutional snapshot proxy, not full SEC quarter-over-quarter filing comparison.
 - The system uses live SEC data, so results vary by run.

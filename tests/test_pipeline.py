@@ -130,8 +130,13 @@ class TestHalalFiltering(unittest.TestCase):
 
     def test_evaluate_halal_returns_unknown_for_missing_sector(self):
         decision = halal.evaluate_halal(None)
-        self.assertFalse(decision["is_halal"])
-        self.assertEqual(decision["status"], "most_probably_no")
+        self.assertTrue(decision["is_halal"])
+        self.assertEqual(decision["status"], "needs_to_be_validate")
+
+    def test_evaluate_halal_marks_non_haram_sector_as_review_required(self):
+        decision = halal.evaluate_halal("Communication Services")
+        self.assertTrue(decision["is_halal"])
+        self.assertEqual(decision["status"], "needs_to_be_validate")
 
     def test_is_halal_still_returns_boolean(self):
         self.assertTrue(halal.is_halal("Technology"))

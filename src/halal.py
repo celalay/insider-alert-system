@@ -1,66 +1,41 @@
-HARAM_KEYWORDS = [
+DEFINITELY_HARAM_KEYWORDS = [
     "financial services",
+    "bank",
     "banks",
     "insurance",
+    "credit services",
+    "capital markets",
+    "asset management",
     "gambling",
     "alcohol",
     "tobacco",
     "adult entertainment",
+    "porn",
 ]
-
-SAFE_SECTORS = {
-    "basic materials",
-    "consumer defensive",
-    "healthcare",
-    "industrials",
-    "technology",
-    "utilities",
-}
-
-BLOCKED_SECTORS = {
-    "communication services",
-    "consumer cyclical",
-    "energy",
-    "real estate",
-}
 
 
 def evaluate_halal(sector):
     if not sector:
         return {
-            "is_halal": False,
-            "status": "most_probably_no",
-            "reason": "Sector unavailable",
+            "is_halal": True,
+            "status": "needs_to_be_validate",
+            "reason": "Sector unavailable: manual Shariah review required",
         }
 
     normalized_sector = sector.strip().lower()
 
-    for keyword in HARAM_KEYWORDS:
+    for keyword in DEFINITELY_HARAM_KEYWORDS:
         if keyword in normalized_sector:
             return {
                 "is_halal": False,
                 "status": "most_probably_no",
-                "reason": f"Most probably NO: {sector}",
+                "reason": f"Most probably NO: clearly prohibited exposure in {sector}",
             }
 
-    if normalized_sector in SAFE_SECTORS:
-        return {
-            "is_halal": True,
-            "status": "needs_to_be_validate",
-            "reason": f"No obvious prohibited exposure in {sector}",
-        }
-
-    if normalized_sector in BLOCKED_SECTORS:
-        return {
-            "is_halal": False,
-            "status": "most_probably_no",
-            "reason": f"Most probably NO: {sector}",
-        }
-
     return {
-        "is_halal": False,
-        "status": "most_probably_no",
-        "reason": f"Most probably NO: sector not clearly classified ({sector})",
+        "is_halal": True,
+        "status": "needs_to_be_validate",
+        "reason": f"Needs review: {sector} is not in definitive-haram list",
     }
 
 
