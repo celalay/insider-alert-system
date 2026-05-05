@@ -1,6 +1,7 @@
 import os
 import requests
 import xml.etree.ElementTree as ET
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from pathlib import Path
 from sector_lookup import get_sector
@@ -11,7 +12,7 @@ load_dotenv(dotenv_path=env_path)
 SEC_USER_AGENT = os.getenv("SEC_USER_AGENT")
 
 
-def get_form4_data():
+def get_form4_data(days_back=2):
     url = "https://www.sec.gov/cgi-bin/browse-edgar"
 
     params = {
@@ -37,6 +38,7 @@ def get_form4_data():
     }
 
     filings = []
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days_back)
 
     for entry in root.findall("atom:entry", namespace):
         title = entry.find("atom:title", namespace).text
@@ -46,6 +48,14 @@ def get_form4_data():
 
         updated = entry.find("atom:updated", namespace).text
 
+        try:
+            updated_dt = datetime.fromisoformat(updated.replace("Z", "+00:00"))
+        except Exception:
+            continue
+
+        if updated_dt < cutoff:
+            continue
+
         filing = {
             "title": title,
             "filing_url": filing_url,
@@ -54,7 +64,7 @@ def get_form4_data():
 
         filings.append(filing)
 
-    print(f"Parsed {len(filings)} Form 4 filings.")
+    print(f"Parsed {len(filings)} Form 4 filings from the last {days_back} day(s).")
 
     all_results = []
     seen = set()

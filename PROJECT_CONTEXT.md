@@ -25,7 +25,9 @@ Python-based insider trading alert system that monitors SEC Form 4 filings and s
 * Minimum transaction amount threshold (default: $25,000)
 * Sector lookup using ticker (via yfinance)
 * Halal filtering based on sector
-* Optional 13F confirmation (currently informational only, not blocking)
+* Size-aware 13F institutional signal using market cap plus `yfinance` holder data
+* Fund-level snapshot in alerts: holder name, shares, % of company, value, and proxy trend note
+* Two-level 13F wording in email output: `needs_to_be_validate` / `most_probably_no`
 
 ### Alert System
 
@@ -42,18 +44,23 @@ Python-based insider trading alert system that monitors SEC Form 4 filings and s
 * Insider name
 * Transaction amount (formatted)
 * Sector
-* Halal status (Passed / filtered out)
-* 13F status:
+* Halal status:
 
-  * Confirmed
-  * Insider-only (no confirmation)
+  * `needs_to_be_validate`
+  * `most_probably_no`
+* 13F status and note
+* Institutional-holder context based on company size
+
+Defaults
+
+- Form 4 fetch window: last 24 hours by default (no widening)
 
 ---
 
 ## Project Structure
 
 * `src/form4.py` → SEC feed + XML parsing + purchase detection
-* `src/form13f.py` → 13F logic (currently basic/mock)
+* `src/form13f.py` → size-aware 13F institutional signal logic
 * `src/halal.py` → sector-based halal filtering
 * `src/sector_lookup.py` → ticker → sector via yfinance
 * `src/emailer.py` → email sending logic
@@ -67,15 +74,15 @@ Python-based insider trading alert system that monitors SEC Form 4 filings and s
 * Sector lookup is integrated and functioning
 * Halal filtering is active and verifiable in email output
 * Duplicate transactions are handled
-* Alerts include insider-only signals even without 13F confirmation
+* Alerts include institutional context even when a company does not meet the 13F confirmation threshold
 
 ---
 
 ## Known Limitations
 
-* 13F confirmation is not yet implemented with real data
+* 13F logic currently uses `yfinance` market cap and institutional holder data as a proxy, not full SEC quarter-by-quarter filing comparison
+* Quarter-over-quarter change is still a placeholder in the current proxy output
 * Sector-based halal filtering is simplified (not finance-grade)
-* Multiple purchases from same insider are not yet aggregated
 * No scheduling (manual execution only)
 * No database/history tracking
 
@@ -83,8 +90,8 @@ Python-based insider trading alert system that monitors SEC Form 4 filings and s
 
 ## Next Goals (Priority Order)
 
-1. Aggregate purchases (group by insider + ticker)
-2. Improve 13F confirmation with real data
+1. Replace the 13F proxy with real SEC quarter-over-quarter filing comparison
+2. Add fund-level trend detection: new positions, increases, decreases, and exits
 3. Add scheduling (daily automation)
 4. Improve halal filtering accuracy (API or dataset-based)
 5. Improve email formatting (summary + ranking)
@@ -105,7 +112,7 @@ Python-based insider trading alert system that monitors SEC Form 4 filings and s
 
 1. Create virtual environment
 2. Install dependencies:
-   pip install -r requirements.txt
+  pip install -r requirements.txt
 
 ### Environment Variables (.env)
 

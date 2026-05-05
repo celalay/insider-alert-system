@@ -84,7 +84,7 @@ class TestMainPipeline(unittest.TestCase):
         captured_output = io.StringIO()
 
         with patch.object(main, "get_form4_data", return_value=realistic_data), \
-             patch.object(main, "check_13f", side_effect=lambda ticker: ticker == "AAPL"), \
+                                                 patch.object(main, "check_13f", side_effect=lambda ticker: {"is_confirmed": ticker == "AAPL", "status": "confirmed" if ticker == "AAPL" else "needs_to_be_validate", "reason": f"Checked {ticker}", "market_cap": 100000000000 if ticker == "AAPL" else 500000000, "company_size": "large" if ticker == "AAPL" else "small", "institutional_holders_count": 4 if ticker == "AAPL" else 0, "required_holders": 3 if ticker == "AAPL" else 1, "top_funds": [{"holder": "Vanguard", "summary_line": "Vanguard — Hold AAPL (0.42%) as of 2025-12-31", "shares": 1000000, "percent_of_company": "0.42%", "value": 100000000}], "snapshot_label": "broad_support_with_major_funds", "summary": "Current snapshot shows 4 institutional holder(s), including 1 major fund(s) above the value threshold.", "major_fund_count": 1}), \
                patch.object(main, "evaluate_halal", side_effect=lambda sector: {"is_halal": sector == "Technology", "status": "needs_to_be_validate" if sector == "Technology" else "most_probably_no", "reason": f"Checked {sector}"}), \
              patch.object(main, "send_email") as mock_send_email, \
              patch("sys.stdout", new=captured_output):
@@ -97,11 +97,18 @@ class TestMainPipeline(unittest.TestCase):
         self.assertIn("Needs to be Validate:", body)
         self.assertIn("Apple Inc. (AAPL)", body)
         self.assertIn("Total insider purchase amount: $125,000.00", body)
-        self.assertIn("13F status: Confirmed", body)
+        self.assertIn("13F status: confirmed", body)
+        self.assertIn("13F summary: Current snapshot shows 4 institutional holder(s), including 1 major fund(s) above the value threshold.", body)
+        self.assertIn("13F note: Checked AAPL", body)
+        self.assertIn("Top funds:", body)
+        self.assertIn("Major funds detected: 1", body)
+        self.assertIn("Vanguard — Hold AAPL (0.42%) as of 2025-12-31", body)
+        self.assertIn("0.42%", body)
         self.assertIn("Insiders: Tim Cook", body)
         self.assertIn("Halal sector check: needs_to_be_validate", body)
         self.assertIn("Most Probably NO:", body)
         self.assertIn("Tesla, Inc. (TSLA)", body)
+        self.assertIn("13F status: needs_to_be_validate", body)
         self.assertNotIn("Small Cap Co (SCPC)", body)
 
         stdout = captured_output.getvalue()
@@ -152,9 +159,44 @@ class TestSectorLookup(unittest.TestCase):
 
 
 class TestForm13F(unittest.TestCase):
-    def test_check_13f_matches_mock_supported_tickers(self):
-        self.assertTrue(form13f.check_13f("AAPL"))
-        self.assertFalse(form13f.check_13f("TSLA"))
+    def test_check_13f_uses_size_aware_thresholds(self):
+        with patch.object(form13f.yf, "Ticker") as mock_ticker:
+            mock_ticker.return_value.info = {"marketCap": 25_000_000_000}
+            mock_ticker.return_value.institutional_holders = __import__("pandas").DataFrame(
+                [
+                    {"Holder": "Vanguard", "Shares": 1000000, "% Out": "0.42%", "Value": 100000000},
+                    {"Holder": "BlackRock", "Shares": 800000, "% Out": "0.31%", "Value": 80000000},
+                    {"Holder": "State Street", "Shares": 600000, "% Out": "0.24%", "Value": 60000000},
+                    {"Holder": "Fidelity", "Shares": 400000, "% Out": "0.16%", "Value": 40000000},
+                ]
+            )
+
+            decision = form13f.check_13f("AAPL")
+
+        self.assertTrue(decision["is_confirmed"])
+        self.assertEqual(decision["status"], "confirmed")
+        self.assertEqual(decision["company_size"], "large")
+        self.assertEqual(decision["required_holders"], 3)
+        self.assertEqual(len(decision["top_funds"]), 3)
+        self.assertEqual(decision["top_funds"][0]["holder"], "Vanguard")
+        self.assertEqual(decision["top_funds"][0]["percent_of_company"], "0.42%")
+        self.assertIn("Hold AAPL (0.42%)", decision["top_funds"][0]["summary_line"])
+        self.assertEqual(decision["snapshot_label"], "broad_support_with_major_funds")
+        self.assertIn("major fund(s)", decision["summary"])
+        self.assertEqual(decision["major_fund_count"], 1)
+
+    def test_check_13f_treats_small_caps_more_leniently(self):
+        with patch.object(form13f.yf, "Ticker") as mock_ticker:
+            mock_ticker.return_value.info = {"marketCap": 300_000_000}
+            mock_ticker.return_value.institutional_holders = __import__("pandas").DataFrame([])
+
+            decision = form13f.check_13f("SCPC")
+
+        self.assertFalse(decision["is_confirmed"])
+        self.assertEqual(decision["status"], "needs_to_be_validate")
+        self.assertEqual(decision["company_size"], "small")
+        self.assertEqual(decision["top_funds"], [])
+        self.assertEqual(decision["snapshot_label"], "no_institutional_snapshot")
 
 
 class TestEmailer(unittest.TestCase):
